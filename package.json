@@ -1,0 +1,19 @@
+{
+  "name": "@aspen-agents/will-solitaire",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "build:agent": "esbuild src/index.agent.ts --bundle --outfile=dist/solitaire.bundle.js --format=iife --global-name=agent",
+    "build:types": "tsc -b -f",
+    "build": "yarn build:agent && yarn build:types"
+  },
+  "devDependencies": {
+    "esbuild": "^0.13.13",
+    "typescript": "^4.4.4"
+  },
+  "dependencies": {
+    "@aspen.cloud/agent-typings": "^0.1.4"
+  }
+}

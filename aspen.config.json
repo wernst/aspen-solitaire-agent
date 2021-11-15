@@ -1,0 +1,7 @@
+{
+  "name": "solitaire",
+  "title": "Solitaire",
+  "description": "The card game Klondike Solitaire",
+  "type": "agent",
+  "pathToDeploy": "./dist"
+}
