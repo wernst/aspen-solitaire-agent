@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "typeRoots": ["./node_modules/@types", "./node_modules/@aspen.cloud"],
+    "typeRoots": ["./node_modules/@types"],
     "outDir": "dist",
     "declaration": true
     // "emitDeclarationOnly": true
