@@ -16,21 +16,19 @@ import {
 
 const agent: Agent = {
   aggregations: {
-    games: {
-      initialize: (games?: Game[]) => {
-        return games ?? [];
+    game: {
+      initialize: (game?: Game) => {
+        return game ?? undefined;
       },
       reducer: (
-        games: Game[],
+        game: Game,
         event: Log<GameStartedMessage | TurnCardMessage | MoveCardMessage>,
       ) => {
         if (event.data.type === 'GAME_STARTED') {
-          games.push(event.data.game);
+          game = event.data.game;
         }
 
         if (event.data.type === 'TURN_CARD') {
-          const { gameId } = event.data;
-          const game = games.find((g) => g.id === gameId);
           if (game)
             if (game.deck.unturned.length) {
               const card = game.deck.unturned.pop()!;
@@ -45,8 +43,6 @@ const agent: Agent = {
         }
 
         if (event.data.type === 'MOVE_CARD') {
-          const { gameId } = event.data;
-          const game = games.find((g) => g.id === gameId);
           if (game) {
             const { from, to } = event.data;
             const fromCardsRef = getCardStackRef(game, from);
@@ -77,9 +73,24 @@ const agent: Agent = {
           }
         }
 
+        return game;
+      },
+      serialize: (game: Game) => {
+        return game;
+      },
+    },
+    games: {
+      initialize: (games?: string[]) => {
+        return games ?? [];
+      },
+      reducer: (games: string[], event: Log<GameStartedMessage>) => {
+        if (event.data.type === 'GAME_STARTED') {
+          games.push(event.data.game.id);
+        }
+
         return games;
       },
-      serialize: (games: Game[]) => {
+      serialize: (games: string[]) => {
         return games;
       },
     },
@@ -90,33 +101,51 @@ const agent: Agent = {
     },
     game: async (params, aspen) => {
       const { id } = params;
-      const games = await aspen.getAggregation('games', {
+      const game = await aspen.getAggregation('game', {
         range: 'continuous',
+        tags: {
+          gameId: id,
+        },
       });
-      return games.find((g: Game) => g.id === id);
+      return game;
     },
   },
   actions: {
     startGame: async (args, aspen) => {
       const game = newGame();
-      await aspen.appendToLog<GameStartedMessage>({
-        type: 'GAME_STARTED',
-        game,
-      });
+      await aspen.pushEvent<GameStartedMessage>(
+        'GAME_STARTED',
+        {
+          game,
+        },
+        {
+          gameId: game.id,
+        },
+      );
       return game.id;
     },
     turnCard: async (args: TurnCardActionParams, aspen) => {
-      await aspen.appendToLog<TurnCardMessage>({
-        type: 'TURN_CARD',
-        ...args,
-      });
+      await aspen.pushEvent<TurnCardMessage>(
+        'TURN_CARD',
+        {
+          ...args,
+        },
+        {
+          gameId: args.gameId,
+        },
+      );
       return 'card turned';
     },
     moveCard: async (args: MoveCardActionParams, aspen) => {
-      await aspen.appendToLog<MoveCardMessage>({
-        type: 'MOVE_CARD',
-        ...args,
-      });
+      await aspen.pushEvent<MoveCardMessage>(
+        'MOVE_CARD',
+        {
+          ...args,
+        },
+        {
+          gameId: args.gameId,
+        },
+      );
       return 'card moved';
     },
   },
